@@ -8,15 +8,18 @@ function patchTask(taskId, payload) {
   });
 }
 
-function moveTaskElement(taskId, isDone) {
+function moveTaskElement(taskId, status) {
   const element = document.querySelector(`li[data-task-id="${taskId}"]`);
-  const pendingList = document.getElementById("pending-list");
-  const doneList = document.getElementById("done-list");
-  if (!element || !pendingList || !doneList) {
+  const targetList = document.getElementById(`column-${status}`);
+  if (!element || !targetList) {
     return;
   }
-  const targetList = isDone ? doneList : pendingList;
   targetList.appendChild(element);
+  const select = document.querySelector(`select[data-task-id="${taskId}"]`);
+  if (select) {
+    select.value = status;
+    select.dataset.currentStatus = status;
+  }
 }
 
 function setupEditableField(selector, fieldName) {
@@ -44,16 +47,53 @@ function setupEditableField(selector, fieldName) {
 document.addEventListener("DOMContentLoaded", () => {
   setupEditableField(".task-title", "title");
 
-  document.querySelectorAll(".toggle-done").forEach((checkbox) => {
-    checkbox.addEventListener("change", () => {
-      const desired = checkbox.checked;
-      patchTask(checkbox.dataset.taskId, { done: desired })
+  document.querySelectorAll(".status-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      const desired = select.value;
+      patchTask(select.dataset.taskId, { status: desired })
         .then(() => {
-          moveTaskElement(checkbox.dataset.taskId, desired);
+          moveTaskElement(select.dataset.taskId, desired);
         })
         .catch(() => {
-          checkbox.checked = !desired;
+          select.value = select.dataset.currentStatus || desired;
         });
+    });
+  });
+
+  const makeDraggable = (card) => {
+    card.addEventListener("dragstart", (event) => {
+      const taskId = card.dataset.taskId;
+      event.dataTransfer.setData("text/plain", taskId);
+      event.dataTransfer.effectAllowed = "move";
+      card.classList.add("dragging");
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("dragging");
+    });
+  };
+
+  document.querySelectorAll(".tasks-column li[draggable='true']").forEach(makeDraggable);
+
+  document.querySelectorAll(".tasks-column").forEach((column) => {
+    column.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      column.classList.add("drag-over");
+      event.dataTransfer.dropEffect = "move";
+    });
+    column.addEventListener("dragleave", () => {
+      column.classList.remove("drag-over");
+    });
+    column.addEventListener("drop", (event) => {
+      event.preventDefault();
+      column.classList.remove("drag-over");
+      const taskId = event.dataTransfer.getData("text/plain");
+      if (!taskId) {
+        return;
+      }
+      const status = column.dataset.status;
+      patchTask(taskId, { status }).then(() => {
+        moveTaskElement(taskId, status);
+      });
     });
   });
 });

@@ -1,5 +1,3 @@
-import os
-
 import pytest
 
 import models
@@ -32,11 +30,11 @@ def test_task_updates_and_deletes(temp_db):
     user_id = models.create_user("carol", "pass123")
     task_id = models.create_task("Подреждане на дрехи", user_id)
 
-    models.update_task(task_id, user_id, title="Подреждане на дрехи и обувки", done=True)
+    models.update_task(task_id, user_id, title="Подреждане на дрехи и обувки", status=models.STATUS_DONE)
     task = models.get_task(task_id, user_id)
 
     assert task["title"] == "Подреждане на дрехи и обувки"
-    assert task["done"] is True
+    assert task["status"] == models.STATUS_DONE
 
     models.delete_task(task_id, user_id)
     assert models.get_task(task_id, user_id) is None
@@ -50,3 +48,14 @@ def test_auth_helpers(temp_db):
 
     user = models.get_user(user_id)
     assert user["username"] == "delta"
+
+
+def test_status_transitions(temp_db):
+    user_id = models.create_user("echo", "pw")
+    task_id = models.create_task("Почистване", user_id)
+
+    models.update_task(task_id, user_id, status=models.STATUS_IN_PROGRESS)
+    assert models.get_task(task_id, user_id)["status"] == models.STATUS_IN_PROGRESS
+
+    models.update_task(task_id, user_id, status=models.STATUS_IN_REVIEW)
+    assert models.get_task(task_id, user_id)["status"] == models.STATUS_IN_REVIEW

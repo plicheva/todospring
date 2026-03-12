@@ -50,6 +50,21 @@ def connection(path: Optional[str] = None) -> Generator[sqlite3.Connection, None
         conn.close()
 
 
+STATUS_TODO = "todo"
+STATUS_IN_PROGRESS = "in_progress"
+STATUS_IN_REVIEW = "in_review"
+STATUS_DONE = "done"
+
+STATUS_OPTIONS = [STATUS_TODO, STATUS_IN_PROGRESS, STATUS_IN_REVIEW, STATUS_DONE]
+
+STATUS_LABELS = {
+    STATUS_TODO: "Чакащи",
+    STATUS_IN_PROGRESS: "Работа",
+    STATUS_IN_REVIEW: "На преглед",
+    STATUS_DONE: "Готови",
+}
+
+
 def _recreate_task_table(conn: sqlite3.Connection) -> None:
     conn.execute("DROP TABLE IF EXISTS tasks")
     conn.executescript(
@@ -58,7 +73,7 @@ def _recreate_task_table(conn: sqlite3.Connection) -> None:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
             user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-            done INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'todo',
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
         """
@@ -86,7 +101,7 @@ def init_db(path: Optional[str] = None) -> None:
 
 def row_to_dict(row: sqlite3.Row) -> Dict:
     data = dict(row)
-    data["done"] = bool(data["done"])
+    data["status"] = data.get("status", STATUS_TODO)
     return data
 
 
@@ -157,7 +172,7 @@ def update_task(
     task_id: int,
     user_id: int,
     title: Optional[str] = None,
-    done: Optional[bool] = None,
+    status: Optional[str] = None,
     path: Optional[str] = None,
 ) -> None:
     fields: List[str] = []
@@ -165,9 +180,9 @@ def update_task(
     if title is not None:
         fields.append("title = ?")
         params.append(title)
-    if done is not None:
-        fields.append("done = ?")
-        params.append(int(done))
+    if status is not None:
+        fields.append("status = ?")
+        params.append(status)
     if not fields:
         return
     params.extend([task_id, user_id])

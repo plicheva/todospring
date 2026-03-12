@@ -13,6 +13,9 @@ from flask import (
 )
 
 from models import (
+    STATUS_DONE,
+    STATUS_LABELS,
+    STATUS_OPTIONS,
     SPRING_TASK_SUGGESTIONS,
     create_task,
     create_user,
@@ -51,7 +54,11 @@ def login_required(view):
 
 @app.context_processor
 def inject_user():
-    return {"current_user": get_current_user()}
+    return {
+        "current_user": get_current_user(),
+        "status_labels": STATUS_LABELS,
+        "status_options": STATUS_OPTIONS,
+    }
 
 
 @app.route("/")
@@ -59,14 +66,22 @@ def inject_user():
 def index():
     user = get_current_user()
     tasks = get_tasks(user["id"])
-    pending_tasks = [task for task in tasks if not task["done"]]
-    done_tasks = [task for task in tasks if task["done"]]
+    grouped = {status: [] for status in STATUS_OPTIONS}
+    for task in tasks:
+        grouped.setdefault(task["status"], []).append(task)
+    pending_tasks = grouped.get("todo", [])
+    in_progress_tasks = grouped.get("in_progress", [])
+    in_review_tasks = grouped.get("in_review", [])
+    done_tasks = grouped.get("done", [])
     total = len(tasks)
-    done_count = len(done_tasks)
+    done_count = len(grouped.get(STATUS_DONE, []))
+    columns = [
+        {"status": status, "label": STATUS_LABELS.get(status, status.title()), "tasks": grouped.get(status, [])}
+        for status in STATUS_OPTIONS
+    ]
     return render_template(
         "index.html",
-        pending_tasks=pending_tasks,
-        done_tasks=done_tasks,
+        columns=columns,
         total=total,
         done=done_count,
         suggestions=SPRING_TASK_SUGGESTIONS,
@@ -92,9 +107,11 @@ def edit_task(task_id):
         return redirect(url_for("index"))
     if request.method == "POST":
         title = request.form.get("title", "").strip()
-        done = request.form.get("done") == "on"
+        status = request.form.get("status") or task["status"]
+        if status not in STATUS_OPTIONS:
+            status = task["status"]
         if title:
-            update_task(task_id, user["id"], title=title, done=done)
+            update_task(task_id, user["id"], title=title, status=status)
         return redirect(url_for("index"))
     return render_template("edit_task.html", task=task)
 
@@ -118,8 +135,8 @@ def api_update_task(task_id):
     updates = {}
     if "title" in payload and isinstance(payload["title"], str):
         updates["title"] = payload["title"].strip()
-    if "done" in payload:
-        updates["done"] = bool(payload["done"])
+    if "status" in payload and payload["status"] in STATUS_OPTIONS:
+        updates["status"] = payload["status"]
     if not updates:
         return jsonify({"error": "nothing to update"}), 400
     update_task(task_id, user["id"], **updates)
