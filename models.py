@@ -4,7 +4,22 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, Generator, List, Optional
 
+from werkzeug.security import check_password_hash, generate_password_hash
+
 DB_PATH = Path(__file__).resolve().parent / "db.sqlite"
+
+SPRING_TASK_SUGGESTIONS = [
+    "Освободете една лавица или чекмедже от излишни вещи",
+    "Изтъркайте дръжки и ключове на светлините",
+    "Подредете канцеларските материали и изхвърлете счупените",
+    "Изчистете хладилника и премахнете изтекли продукти",
+    "Освежете текстилите: възглавници, завеси, покривки",
+    "Прегледайте обувки и дрехи за дарение",
+    "Почистете килимите и постелките",
+    "Измийте прозорците, за да влезе повече светлина",
+    "Подредете кабелите и предпазните ленти",
+    "Планирайте кратка дигитална очистка (имейли, файлове)",
+]
 
 
 def get_db_path(override: Optional[str] = None) -> Path:
@@ -35,21 +50,37 @@ def connection(path: Optional[str] = None) -> Generator[sqlite3.Connection, None
         conn.close()
 
 
+def _recreate_task_table(conn: sqlite3.Connection) -> None:
+    conn.execute("DROP TABLE IF EXISTS tasks")
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            done INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+    )
+
+
 def init_db(path: Optional[str] = None) -> None:
-    schema = """
-    CREATE TABLE IF NOT EXISTS tasks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        done INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    """
     with connection(path) as conn:
-        existing = conn.execute("PRAGMA table_info(tasks)").fetchall()
-        column_names = [row["name"] for row in existing]
-        if "notes" in column_names or "list_id" in column_names or "board_id" in column_names:
-            conn.execute("DROP TABLE IF EXISTS tasks")
-        conn.executescript(schema)
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+        task_info = conn.execute("PRAGMA table_info(tasks)").fetchall()
+        columns = {row["name"] for row in task_info}
+        if not columns or "user_id" not in columns:
+            _recreate_task_table(conn)
         conn.commit()
 
 
@@ -59,26 +90,73 @@ def row_to_dict(row: sqlite3.Row) -> Dict:
     return data
 
 
-def get_tasks(path: Optional[str] = None) -> List[Dict]:
-    with connection(path) as conn:
-        rows = conn.execute("SELECT * FROM tasks ORDER BY created_at").fetchall()
-        return [row_to_dict(row) for row in rows]
-
-
-def create_task(title: str, path: Optional[str] = None) -> int:
+def create_user(username: str, password: str, path: Optional[str] = None) -> int:
+    password_hash = generate_password_hash(password)
     with connection(path) as conn:
         cursor = conn.execute(
-            "INSERT INTO tasks (title) VALUES (?)",
-            (title,),
+            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
+            (username, password_hash),
         )
         conn.commit()
         return cursor.lastrowid
 
 
+def get_user(user_id: int, path: Optional[str] = None) -> Optional[Dict]:
+    with connection(path) as conn:
+        row = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+        if not row:
+            return None
+        return dict(row)
+
+
+def get_user_by_username(username: str, path: Optional[str] = None) -> Optional[Dict]:
+    with connection(path) as conn:
+        row = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+        if not row:
+            return None
+        return dict(row)
+
+
+def verify_user(username: str, password: str, path: Optional[str] = None) -> Optional[Dict]:
+    user = get_user_by_username(username, path=path)
+    if not user:
+        return None
+    if not check_password_hash(user["password_hash"], password):
+        return None
+    return user
+
+
+def get_tasks(user_id: int, path: Optional[str] = None) -> List[Dict]:
+    with connection(path) as conn:
+        rows = conn.execute(
+            "SELECT * FROM tasks WHERE user_id=? ORDER BY created_at", (user_id,)
+        ).fetchall()
+        return [row_to_dict(row) for row in rows]
+
+
+def create_task(title: str, user_id: int, path: Optional[str] = None) -> int:
+    with connection(path) as conn:
+        cursor = conn.execute(
+            "INSERT INTO tasks (title, user_id) VALUES (?, ?)",
+            (title, user_id),
+        )
+        conn.commit()
+        return cursor.lastrowid
+
+
+def get_task(task_id: int, user_id: int, path: Optional[str] = None) -> Optional[Dict]:
+    with connection(path) as conn:
+        row = conn.execute(
+            "SELECT * FROM tasks WHERE id=? AND user_id=?",
+            (task_id, user_id),
+        ).fetchone()
+        return row_to_dict(row) if row else None
+
+
 def update_task(
     task_id: int,
+    user_id: int,
     title: Optional[str] = None,
-    notes: Optional[str] = None,
     done: Optional[bool] = None,
     path: Optional[str] = None,
 ) -> None:
@@ -92,20 +170,16 @@ def update_task(
         params.append(int(done))
     if not fields:
         return
-    params.append(task_id)
-    query = f"UPDATE tasks SET {', '.join(fields)} WHERE id=?"
+    params.extend([task_id, user_id])
+    query = f"UPDATE tasks SET {', '.join(fields)} WHERE id=? AND user_id=?"
     with connection(path) as conn:
         conn.execute(query, params)
         conn.commit()
 
 
-def delete_task(task_id: int, path: Optional[str] = None) -> None:
+def delete_task(task_id: int, user_id: int, path: Optional[str] = None) -> None:
     with connection(path) as conn:
-        conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
+        conn.execute(
+            "DELETE FROM tasks WHERE id=? AND user_id=?", (task_id, user_id)
+        )
         conn.commit()
-
-
-def get_task(task_id: int, path: Optional[str] = None) -> Optional[Dict]:
-    with connection(path) as conn:
-        row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
-        return row_to_dict(row) if row else None
