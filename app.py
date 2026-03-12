@@ -135,7 +135,7 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         if not username or not password:
-            error = "Въведете потребителско име и парола."
+            error = "Въведете потребителско име и парола:"
         else:
             try:
                 create_user(username, password)
