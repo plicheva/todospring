@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import models
@@ -11,26 +13,40 @@ def temp_db(tmp_path, monkeypatch):
     return db_file
 
 
-def test_create_and_retrieve_task(temp_db):
-    task_id = models.create_task("Buy tulips")
-    tasks = models.get_tasks()
-    assert len(tasks) == 1
-    task = tasks[0]
-    assert task["id"] == task_id
-    assert task["title"] == "Buy tulips"
-    assert task["done"] is False
+def test_user_task_isolation(temp_db):
+    alice_id = models.create_user("alice", "pass123")
+    bob_id = models.create_user("bob", "secret")
+
+    models.create_task("Полиране на масата", alice_id)
+    models.create_task("Организиране на шкаф", bob_id)
+
+    alice_tasks = models.get_tasks(alice_id)
+    bob_tasks = models.get_tasks(bob_id)
+
+    assert len(alice_tasks) == 1
+    assert alice_tasks[0]["title"] == "Полиране на масата"
+    assert bob_tasks[0]["title"] == "Организиране на шкаф"
 
 
-def test_update_done_and_text(temp_db):
-    task_id = models.create_task("Spray watered plants")
-    models.update_task(task_id, title="Water plants thoroughly", done=True)
-    task = models.get_task(task_id)
-    assert task["title"] == "Water plants thoroughly"
+def test_task_updates_and_deletes(temp_db):
+    user_id = models.create_user("carol", "pass123")
+    task_id = models.create_task("Подреждане на дрехи", user_id)
+
+    models.update_task(task_id, user_id, title="Подреждане на дрехи и обувки", done=True)
+    task = models.get_task(task_id, user_id)
+
+    assert task["title"] == "Подреждане на дрехи и обувки"
     assert task["done"] is True
 
+    models.delete_task(task_id, user_id)
+    assert models.get_task(task_id, user_id) is None
 
-def test_delete_task(temp_db):
-    task_id = models.create_task("Recycle bottles")
-    models.delete_task(task_id)
-    assert models.get_task(task_id) is None
-    assert models.get_tasks() == []
+
+def test_auth_helpers(temp_db):
+    user_id = models.create_user("delta", "strong")
+    assert models.verify_user("delta", "strong")
+    assert not models.verify_user("delta", "wrong")
+    assert not models.verify_user("missing", "pass")
+
+    user = models.get_user(user_id)
+    assert user["username"] == "delta"
