@@ -1,0 +1,33 @@
+﻿# Пролетна дъска
+
+Приложението е едно Kanban табло с 10 идеи за пролетно почистване, цветни илюстрации и лични задачи. Flask + SQLite + Jinja2 сами се грижат за логиката.
+
+## Инсталация
+
+1. `cd taskboard`
+2. `python -m pip install -r requirements.txt`
+
+## Стартиране
+
+1. Работете от директорията `taskboard`.
+2. `python app.py`
+3. Посетете `http://localhost:5000` – Kanban колоните са на една линия, а таблото позволява хоризонтален скрол, така че картите да не се застъпват на тесни екрани.
+
+Данните се запазват в `db.sqlite`. За отделни среди задайте `TASKBOARD_DB="/път/до/файл.sqlite"`.
+
+## Характеристики
+
+- 10 предложения за деклантеринг в решетка, с три реални цветни снимки и място да добавите свои задачи.
+- Kanban таблото има четири колони (To Do, In Progress, In Review, Done) на една линия, всяка със собствен вертикален скрол, избор на статус (падащо меню) и drag & drop, така че задачи се преместват между колоните с пренос.
+- Вход/регистрация създават профили и гарантират, че виждате само своите задачи; текущият потребител се показва в хедъра.
+- Силно компактни задачи (ограничена височина) с inline редакция и AJAX `PATCH /api/tasks/<id>` за змяна на статус или заглавие.
+- Отделният формуляр за редакция дава фин контрол над заглавието и статуса, а `main.js` премества картите между колоните без презареждане.
+
+## Тестване
+
+```
+pytest
+```
+
+Тестовете (`tests/test_models.py`) ползват временна база, посочена чрез `TASKBOARD_DB`.
+- Application Insights (Instrumentation Key or Connection String in `APPINSIGHTS_INSTRUMENTATIONKEY` / `APPLICATIONINSIGHTS_CONNECTION_STRING`) can be set as App Settings so the `opencensus` middleware auto-sends request/exception telemetry and the Flask logger emits to Azure.

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="list" style="max-width: 500px; margin: 2rem auto;">
+    <h2>Вход</h2>
+    {% if error %}
+      <p style="color: #b91c1c;">{{ error }}</p>
+    {% endif %}
+    <form action="{{ url_for('login') }}" method="post" style="display: grid; gap: 0.75rem;">
+      <label>
+        Потребителско име
+        <input type="text" name="username" required autocomplete="username" />
+      </label>
+      <label>
+        Парола
+        <input type="password" name="password" required autocomplete="current-password" />
+      </label>
+      <button type="submit">Влез</button>
+      <p>Нямате профил? <a href="{{ url_for('register') }}">Регистрирайте се</a></p>
+    </form>
+  </section>
+{% endblock %}

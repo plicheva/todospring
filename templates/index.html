@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="list">
+    <div class="summary">
+      <span>Завършени задачи: {{ done }} / {{ total if total else 0 }}</span>
+      <span>Следващите стъпки остават под колоните</span>
+    </div>
+
+    <div class="suggestions">
+      <header>
+        <h3>Пролетно табло за почистване</h3>
+        <p>Изберете идеи от списъка и добавете свои задачи към колоните по-долу.</p>
+      </header>
+      <div class="suggestions-grid">
+        {% for suggestion in suggestions %}
+          <div class="suggestion-card">
+            <span>{{ loop.index }}.</span>
+            <p>{{ suggestion }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="suggestion-cta">
+        <img
+          src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
+          alt="Пастелен букет"
+          loading="lazy"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
+          alt="Цветя на маса"
+          loading="lazy"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
+          alt="Лалета"
+          loading="lazy"
+        />
+        <p>Добавете задача в полето по-долу, след което премествайте картите между колоните.</p>
+      </div>
+    </div>
+
+    <div class="kanban-board">
+      {% for column in columns %}
+          <div class="tasks-column" data-status="{{ column.status }}">
+          <header>
+            <h3>{{ column.label }}</h3>
+            <p>{{ column.tasks|length }} карти</p>
+          </header>
+            <ul id="column-{{ column.status }}">
+            {% for task in column.tasks %}
+              <li data-task-id="{{ task.id }}" draggable="true" data-status="{{ task.status }}">
+                <div class="task-line">
+                  <label>
+                    <span class="task-title" contenteditable="true" data-task-id="{{ task.id }}">{{ task.title }}</span>
+                  </label>
+                </div>
+                <div class="task-meta">
+                  <select class="status-select" data-task-id="{{ task.id }}" data-current-status="{{ task.status }}">
+                    {% for status in status_options %}
+                      <option value="{{ status }}" {% if status == task.status %}selected{% endif %}>
+                        {{ status_labels[status] }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  <div>
+                    <a href="{{ url_for('edit_task', task_id=task.id) }}">Редакция</a>
+                    <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="post" style="display:inline;">
+                      <button type="submit" class="secondary">Премахни</button>
+                    </form>
+                  </div>
+                </div>
+              </li>
+            {% else %}
+              <li>
+                <p style="margin: 0; font-weight: 600;">Няма задачи в тази колона.</p>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="add-task-form">
+      <form action="{{ url_for('add_task') }}" method="post" style="display: grid; gap: 0.5rem;">
+        <input type="text" name="title" placeholder="Добави нова задача" required autocomplete="off" />
+        <button type="submit">Добави</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

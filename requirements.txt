@@ -1,0 +1,4 @@
+Flask>=3.0
+pytest>=8.0
+opencensus-ext-azure>=1.2.12
+opencensus-ext-flask>=0.7.13

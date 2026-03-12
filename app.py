@@ -1,0 +1,219 @@
+import os
+import sqlite3
+from functools import wraps
+
+from flask import (
+    Flask,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+
+from models import (
+    STATUS_DONE,
+    STATUS_LABELS,
+    STATUS_OPTIONS,
+    SPRING_TASK_SUGGESTIONS,
+    create_task,
+    create_user,
+    delete_task,
+    get_task,
+    get_tasks,
+    get_user,
+    get_user_by_username,
+    init_db,
+    update_task,
+    verify_user,
+)
+
+try:
+    from opencensus.ext.azure.log_exporter import AzureLogHandler
+    from opencensus.ext.azure.trace_exporter import AzureExporter
+    from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+    from opencensus.trace.samplers import ProbabilitySampler
+
+    OPENCENSUS_AVAILABLE = True
+except ImportError:
+    OPENCENSUS_AVAILABLE = False
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("TASKBOARD_SECRET", "spring-list-key")
+
+init_db()
+
+APPINSIGHTS_KEY = os.environ.get("APPINSIGHTS_INSTRUMENTATIONKEY") or os.environ.get(
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"
+)
+if OPENCENSUS_AVAILABLE and APPINSIGHTS_KEY:
+    connection_string = (
+        APPINSIGHTS_KEY
+        if APPINSIGHTS_KEY.lower().startswith("instrumentationkey=")
+        else f"InstrumentationKey={APPINSIGHTS_KEY}"
+    )
+    FlaskMiddleware(
+        app,
+        exporter=AzureExporter(connection_string=connection_string),
+        sampler=ProbabilitySampler(rate=1.0),
+    )
+    log_handler = AzureLogHandler(connection_string=connection_string)
+    log_handler.setLevel("INFO")
+    app.logger.addHandler(log_handler)
+
+
+def get_current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    return get_user(user_id)
+
+
+def login_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not get_current_user():
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+
+    return wrapped
+
+
+@app.context_processor
+def inject_user():
+    return {
+        "current_user": get_current_user(),
+        "status_labels": STATUS_LABELS,
+        "status_options": STATUS_OPTIONS,
+    }
+
+
+@app.route("/")
+@login_required
+def index():
+    user = get_current_user()
+    tasks = get_tasks(user["id"])
+    grouped = {status: [] for status in STATUS_OPTIONS}
+    for task in tasks:
+        grouped.setdefault(task["status"], []).append(task)
+    pending_tasks = grouped.get("todo", [])
+    in_progress_tasks = grouped.get("in_progress", [])
+    in_review_tasks = grouped.get("in_review", [])
+    done_tasks = grouped.get("done", [])
+    total = len(tasks)
+    done_count = len(grouped.get(STATUS_DONE, []))
+    columns = [
+        {"status": status, "label": STATUS_LABELS.get(status, status.title()), "tasks": grouped.get(status, [])}
+        for status in STATUS_OPTIONS
+    ]
+    return render_template(
+        "index.html",
+        columns=columns,
+        total=total,
+        done=done_count,
+        suggestions=SPRING_TASK_SUGGESTIONS,
+    )
+
+
+@app.route("/tasks", methods=["POST"])
+@login_required
+def add_task():
+    title = request.form.get("title", "").strip()
+    if title:
+        user = get_current_user()
+        create_task(title, user["id"])
+    return redirect(url_for("index"))
+
+
+@app.route("/tasks/<int:task_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_task(task_id):
+    user = get_current_user()
+    task = get_task(task_id, user["id"])
+    if not task:
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        status = request.form.get("status") or task["status"]
+        if status not in STATUS_OPTIONS:
+            status = task["status"]
+        if title:
+            update_task(task_id, user["id"], title=title, status=status)
+        return redirect(url_for("index"))
+    return render_template("edit_task.html", task=task)
+
+
+@app.route("/tasks/<int:task_id>/delete", methods=["POST"])
+@login_required
+def delete_task_route(task_id):
+    user = get_current_user()
+    delete_task(task_id, user["id"])
+    return redirect(url_for("index"))
+
+
+@app.route("/api/tasks/<int:task_id>", methods=["PATCH"])
+@login_required
+def api_update_task(task_id):
+    user = get_current_user()
+    task = get_task(task_id, user["id"])
+    if not task:
+        return jsonify({"error": "task not found"}), 404
+    payload = request.get_json(silent=True) or {}
+    updates = {}
+    if "title" in payload and isinstance(payload["title"], str):
+        updates["title"] = payload["title"].strip()
+    if "status" in payload and payload["status"] in STATUS_OPTIONS:
+        updates["status"] = payload["status"]
+    if not updates:
+        return jsonify({"error": "nothing to update"}), 400
+    update_task(task_id, user["id"], **updates)
+    return jsonify({"status": "ok"})
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if get_current_user():
+        return redirect(url_for("index"))
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        if not username or not password:
+            error = "Въведете потребителско име и парола."
+        else:
+            try:
+                create_user(username, password)
+                user = get_user_by_username(username)
+                session["user_id"] = user["id"]
+                return redirect(url_for("index"))
+            except sqlite3.IntegrityError:
+                error = "Това име вече е заето."
+    return render_template("register.html", error=error)
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if get_current_user():
+        return redirect(url_for("index"))
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user = verify_user(username, password)
+        if not user:
+            error = "Невалидни идентификационни данни."
+        else:
+            session["user_id"] = user["id"]
+            return redirect(url_for("index"))
+    return render_template("login.html", error=error)
+
+
+@app.route("/logout")
+def logout():
+    session.pop("user_id", None)
+    return redirect(url_for("login"))
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
