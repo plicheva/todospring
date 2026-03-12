@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="list" style="max-width: 600px; margin: 0 auto;">
+    <h2>Редакция на задача</h2>
+    <form action="{{ url_for('edit_task', task_id=task.id) }}" method="post" style="display: grid; gap: 0.75rem;">
+      <label>
+        Заглавие
+        <input type="text" name="title" value="{{ task.title }}" required />
+      </label>
+      <label style="display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" name="done" {% if task.done %}checked{% endif %} />
+        Отбележи като готова
+      </label>
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="submit">Запази</button>
+        <a href="{{ url_for('index') }}" class="secondary" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem 1rem; border-radius: 0.65rem; text-decoration: none;">Върни се</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

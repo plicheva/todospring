@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="list">
+    <div class="summary">
+      <span>Завършени задачи: {{ done }} / {{ total if total else 0 }}</span>
+      <span>{{ total - done }} задачи чакат своето начало</span>
+    </div>
+
+    <div class="suggestions">
+      <header>
+        <h3>Списък с основни пролетни задачи</h3>
+        <p>Следвайте тези 10 идеи за деклантеринг, после добавете своите собствени.</p>
+      </header>
+      <div class="suggestions-grid">
+        {% for suggestion in suggestions %}
+          <div class="suggestion-card">
+            <span>{{ loop.index }}.</span>
+            <p>{{ suggestion }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="suggestion-cta">
+        <img
+          src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
+          alt="Пастелни цветя на маса"
+          loading="lazy"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
+          alt="Арт букет с бели рози"
+          loading="lazy"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
+          alt="Лалета в светла рамка"
+          loading="lazy"
+        />
+        <p>След като се вдъхновите, запишете собствените си задачи в долната форма.</p>
+      </div>
+    </div>
+
+    <div class="tasks-section">
+      <div class="tasks-column">
+        <header>
+          <h3>Днес (очакващи)</h3>
+          <p>Задачи, които още не са маркирани като готови ({{ pending_tasks|length }})</p>
+        </header>
+        <ul id="pending-list">
+          {% for task in pending_tasks %}
+            <li data-task-id="{{ task.id }}">
+              <div class="task-line">
+                <label>
+                  <input type="checkbox" class="toggle-done" data-task-id="{{ task.id }}" />
+                  <span class="task-title" contenteditable="true" data-task-id="{{ task.id }}">{{ task.title }}</span>
+                </label>
+              </div>
+              <div class="task-meta">
+                <a href="{{ url_for('edit_task', task_id=task.id) }}">Редакция</a>
+                <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="post">
+                  <button type="submit" class="secondary">Премахни</button>
+                </form>
+              </div>
+            </li>
+          {% else %}
+            <li>
+              <p style="margin: 0; font-weight: 600;">Няма нерешени задачи – добавете първата!</p>
+            </li>
+          {% endfor %}
+        </ul>
+        <form action="{{ url_for('add_task') }}" method="post" style="margin-top: 1rem; display: grid; gap: 0.5rem;">
+          <input type="text" name="title" placeholder="Добави нова задача" required autocomplete="off" />
+          <button type="submit">Добави</button>
+        </form>
+      </div>
+
+      <div class="tasks-column done-column">
+        <header>
+          <h3>Готови</h3>
+          <p>Показани са всички приключени задачи ({{ done_tasks|length }})</p>
+        </header>
+        <ul id="done-list">
+          {% for task in done_tasks %}
+            <li data-task-id="{{ task.id }}">
+              <div class="task-line">
+                <label>
+                  <input type="checkbox" class="toggle-done" data-task-id="{{ task.id }}" checked />
+                  <span class="task-title" contenteditable="true" data-task-id="{{ task.id }}">{{ task.title }}</span>
+                </label>
+              </div>
+              <div class="task-meta">
+                <a href="{{ url_for('edit_task', task_id=task.id) }}">Редакция</a>
+                <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="post">
+                  <button type="submit" class="secondary">Премахни</button>
+                </form>
+              </div>
+            </li>
+          {% else %}
+            <li>
+              <p style="margin: 0; font-weight: 600;">Все още няма завършени задачи.</p>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </section>
+{% endblock %}

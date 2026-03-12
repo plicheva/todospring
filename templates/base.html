@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spring To‑Do List</title>
+    <style>
+      html {
+        height: 100%;
+      }
+      :root {
+        --text: #0f172a;
+        --surface: rgba(255, 255, 255, 0.9);
+        --accent: #0ea5e9;
+        --accent-strong: #2563eb;
+        --border-light: rgba(14, 165, 233, 0.4);
+        --done-bg: rgba(209, 250, 229, 0.85);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        color: var(--text);
+        background: #fdfaf6;
+        line-height: 1.6;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(180deg, #fdfaf6 0%, #f4f1f8 60%, #eefcf5 100%);
+      }
+      header {
+        padding: 1rem clamp(0.75rem, 4vw, 2rem);
+        background: linear-gradient(135deg, #85f7c0, #a0eafd);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      .hero-gallery {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.6rem;
+        margin-top: 0.6rem;
+      }
+      .hero-gallery img {
+        width: 100%;
+        height: 90px;
+        object-fit: cover;
+        border-radius: 0.9rem;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 12px 25px rgba(15, 23, 42, 0.35);
+      }
+      header h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.6rem);
+      }
+      header p {
+        margin: 0;
+        font-weight: 500;
+      }
+      main {
+        flex: 1;
+        padding: clamp(0.5rem, 3vw, 2rem);
+        display: flex;
+        flex-direction: column;
+      }
+      .page {
+        max-width: 960px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        height: 100%;
+      }
+      form {
+        margin: 0;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        padding: 0.6rem 0.7rem;
+        border-radius: 0.65rem;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+        font-size: 1rem;
+        background: #fff;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+      }
+      button {
+        border: none;
+        padding: 0.6rem 1rem;
+        border-radius: 0.65rem;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      button.secondary {
+        background: rgba(217, 240, 248, 0.8);
+        color: var(--text);
+      }
+      .list {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 1rem;
+        padding: 1rem;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      li {
+        background: var(--surface);
+        border-radius: 0.75rem;
+        padding: 0.45rem 0.65rem;
+        border: 1px solid var(--border-light);
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        font-size: 0.9rem;
+        min-height: 44px;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+      li:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      }
+      .task-line {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .task-title {
+        font-weight: 600;
+        font-size: 1.05rem;
+        outline: none;
+        min-width: 0;
+      }
+      .task-title[contenteditable]:focus {
+        outline: 2px solid rgba(14, 165, 233, 0.45);
+      }
+      .task-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.4rem;
+        font-size: 0.9rem;
+        color: #0f172a;
+      }
+      .task-meta a {
+        color: #0ea5e9;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .task-meta form {
+        margin: 0;
+      }
+      .summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-weight: 600;
+      }
+      .summary span {
+        background: #fff;
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+      }
+      .suggestions {
+        margin-top: 1rem;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 1rem;
+        padding: 1rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 15px 35px rgba(15, 23, 42, 0.05);
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .suggestions header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+      .suggestions header p {
+        margin: 0;
+        color: #475569;
+        font-size: 0.9rem;
+      }
+      .suggestions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.5rem;
+      }
+      .suggestion-card {
+        background: linear-gradient(135deg, rgba(235, 245, 255, 0.9), rgba(255, 255, 255, 0.9));
+        border-radius: 0.8rem;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+        padding: 0.7rem;
+        font-size: 0.88rem;
+        display: flex;
+        gap: 0.4rem;
+        align-items: baseline;
+        color: #0f172a;
+      }
+      .suggestion-card span {
+        font-weight: 700;
+        color: var(--accent-strong);
+      }
+      .suggestion-cta {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .suggestion-cta img {
+        width: 90px;
+        height: 90px;
+        border-radius: 0.9rem;
+        object-fit: cover;
+        border: 2px solid rgba(14, 165, 233, 0.4);
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
+      }
+      .tasks-section {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        flex: 1;
+        min-height: 0;
+      }
+      .tasks-column {
+        flex: 1;
+        min-width: 280px;
+        max-width: 360px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 1rem;
+        padding: 1rem;
+        box-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .tasks-column.done-column {
+        background: var(--done-bg);
+      }
+      .tasks-column header {
+        margin-bottom: 0.5rem;
+      }
+      .tasks-column h3 {
+        margin: 0;
+        font-size: 1.25rem;
+      }
+      .tasks-column p {
+        margin: 0;
+        color: #475569;
+      }
+      @media (max-width: 640px) {
+        .task-meta {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Пролетно освежаване</h1>
+      <p>Съберете разцъфващи идеи и лични задачи на един екран.</p>
+      <div class="hero-gallery" aria-hidden="true">
+        <img
+          src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
+          alt="Аранжировка от полски цветя"
+          loading="lazy"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
+          alt="Пастелен букет на маса"
+          loading="lazy"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
+          alt="Лалета и зелената свежест"
+          loading="lazy"
+        />
+      </div>
+    </header>
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+  </body>
+</html>
