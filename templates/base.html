@@ -3,8 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+<<<<<<< HEAD
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>Spring Task Board</title>
+=======
+    <title>Spring To‑Do List</title>
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     <style>
       html {
         height: 100%;
@@ -15,6 +19,10 @@
         --accent: #0ea5e9;
         --accent-strong: #2563eb;
         --border-light: rgba(14, 165, 233, 0.4);
+<<<<<<< HEAD
+=======
+        --done-bg: rgba(209, 250, 229, 0.85);
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         font-family: "Segoe UI", system-ui, sans-serif;
         color: var(--text);
         background: #fdfaf6;
@@ -28,7 +36,11 @@
         flex-direction: column;
         background: linear-gradient(180deg, #fdfaf6 0%, #f4f1f8 60%, #eefcf5 100%);
       }
+<<<<<<< HEAD
       .site-header {
+=======
+      header {
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         padding: 1rem clamp(0.75rem, 4vw, 2rem);
         background: linear-gradient(135deg, #85f7c0, #a0eafd);
         color: var(--text);
@@ -69,11 +81,19 @@
         font-size: 0.9rem;
         color: #0f172a;
       }
+<<<<<<< HEAD
       .site-header h1 {
         margin: 0;
         font-size: clamp(1.6rem, 4vw, 2.6rem);
       }
       .site-header p {
+=======
+      header h1 {
+        margin: 0;
+        font-size: clamp(1.6rem, 4vw, 2.6rem);
+      }
+      header p {
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         margin: 0;
         font-weight: 500;
       }
@@ -95,8 +115,12 @@
         margin: 0;
       }
       input[type="text"],
+<<<<<<< HEAD
       input[type="password"],
       select {
+=======
+      textarea {
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         width: 100%;
         padding: 0.6rem 0.7rem;
         border-radius: 0.65rem;
@@ -105,10 +129,13 @@
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
       }
+<<<<<<< HEAD
       select {
         width: auto;
         max-width: 100%;
       }
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       button {
         border: none;
         padding: 0.6rem 1rem;
@@ -153,6 +180,7 @@
         transform: translateY(-1px);
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
       }
+<<<<<<< HEAD
       li.dragging {
         opacity: 0.92;
         box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
@@ -165,11 +193,14 @@
       li.drag-placeholder:hover {
         transform: none;
       }
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       .task-line {
         display: flex;
         gap: 0.5rem;
         align-items: center;
       }
+<<<<<<< HEAD
       .drag-handle {
         width: 28px;
         height: 28px;
@@ -197,6 +228,8 @@
       .drag-handle:active {
         cursor: grabbing;
       }
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       .task-title {
         font-weight: 600;
         font-size: 1.05rem;
@@ -292,16 +325,30 @@
         border: 2px solid rgba(14, 165, 233, 0.4);
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
       }
+<<<<<<< HEAD
+=======
+      .tasks-section {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        flex: 1;
+        min-height: 0;
+      }
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       .kanban-board {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1rem;
         width: 100%;
+<<<<<<< HEAD
         background: rgba(240, 248, 255, 0.7);
         border-radius: 1.25rem;
         padding: 1rem;
         border: 1px solid rgba(14, 165, 233, 0.3);
         box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       }
       .tasks-column {
         flex: 1;
@@ -329,11 +376,27 @@
         gap: 0.4rem;
         overflow-y: auto;
         max-height: 430px;
+<<<<<<< HEAD
         min-height: 90px;
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       }
       .add-task-form {
         margin-top: 1rem;
       }
+<<<<<<< HEAD
+=======
+      .kanban-board {
+        background: rgba(240, 248, 255, 0.7);
+        border-radius: 1.25rem;
+        padding: 1rem;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+      }
+      .tasks-column.done-column {
+        background: var(--done-bg);
+      }
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       .tasks-column header {
         margin-bottom: 0.5rem;
       }
@@ -345,6 +408,7 @@
         margin: 0;
         color: #475569;
       }
+<<<<<<< HEAD
       .system-status {
         display: flex;
         justify-content: space-between;
@@ -624,12 +688,15 @@
         color: #aab4c3;
         margin: 0;
       }
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       @media (max-width: 640px) {
         .task-meta {
           flex-direction: column;
           align-items: flex-start;
         }
       }
+<<<<<<< HEAD
       @media (max-width: 900px) {
         .metric-grid,
         .logs-grid {
@@ -684,23 +751,59 @@
         <img
           src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
           alt="Arrangement of wildflowers"
+=======
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="user-nav">
+        {% if current_user %}
+          <span>Вие сте {{ current_user.username }}</span>
+          <a href="{{ url_for('logout') }}">Изход</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Вход</a>
+          <a href="{{ url_for('register') }}">Регистрация</a>
+        {% endif %}
+      </div>
+      <h1>Пролетно освежаване</h1>
+      <p>Съберете разцъфващи идеи и лични задачи на един екран.</p>
+      <div class="hero-gallery" aria-hidden="true">
+        <img
+          src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
+          alt="Аранжировка от полски цветя"
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
+<<<<<<< HEAD
           alt="Pastel bouquet on a table"
+=======
+          alt="Пастелен букет на маса"
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
+<<<<<<< HEAD
           alt="Tulips and fresh greenery"
+=======
+          alt="Лалета и зелената свежест"
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
           loading="lazy"
         />
       </div>
     </header>
+<<<<<<< HEAD
     <main class="page {% block main_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>
     <script src="{{ url_for('static', filename='main.js') }}?v={{ asset_version }}"></script>
+=======
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
   </body>
 </html>

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import logging
 import os
 import secrets
@@ -13,6 +14,14 @@ from flask import (
     abort,
     Flask,
     g,
+=======
+import os
+import sqlite3
+from functools import wraps
+
+from flask import (
+    Flask,
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     jsonify,
     redirect,
     render_template,
@@ -21,7 +30,10 @@ from flask import (
     url_for,
 )
 
+<<<<<<< HEAD
 from log_dashboard import build_daily_status, build_log_dashboard
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 from models import (
     STATUS_DONE,
     STATUS_LABELS,
@@ -39,6 +51,7 @@ from models import (
     verify_user,
 )
 
+<<<<<<< HEAD
 APP_DIR = Path(__file__).resolve().parent
 LOG_DIR = APP_DIR / "logs"
 LOG_FILE = LOG_DIR / "taskboard.log"
@@ -111,10 +124,15 @@ if generated_secret:
         "TASKBOARD_SECRET is not set; using a temporary development secret. "
         "Sessions will be reset when the app restarts."
     )
+=======
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("TASKBOARD_SECRET", "spring-list-key")
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 
 init_db()
 
 
+<<<<<<< HEAD
 @app.before_request
 def mark_request_start():
     g.request_started_at = perf_counter()
@@ -184,6 +202,8 @@ def log_request_exception(error):
         )
 
 
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
@@ -205,11 +225,16 @@ def login_required(view):
 def inject_user():
     return {
         "current_user": get_current_user(),
+<<<<<<< HEAD
         "daily_status": build_daily_status(LOG_DIR),
         "status_labels": STATUS_LABELS,
         "status_options": STATUS_OPTIONS,
         "asset_version": ASSET_VERSION,
         "csrf_token": csrf_token,
+=======
+        "status_labels": STATUS_LABELS,
+        "status_options": STATUS_OPTIONS,
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     }
 
 
@@ -221,6 +246,7 @@ def index():
     grouped = {status: [] for status in STATUS_OPTIONS}
     for task in tasks:
         grouped.setdefault(task["status"], []).append(task)
+<<<<<<< HEAD
     total = len(tasks)
     done_count = len(grouped.get(STATUS_DONE, []))
     columns = [
@@ -229,6 +255,16 @@ def index():
             "label": STATUS_LABELS.get(status, status.title()),
             "tasks": grouped.get(status, []),
         }
+=======
+    pending_tasks = grouped.get("todo", [])
+    in_progress_tasks = grouped.get("in_progress", [])
+    in_review_tasks = grouped.get("in_review", [])
+    done_tasks = grouped.get("done", [])
+    total = len(tasks)
+    done_count = len(grouped.get(STATUS_DONE, []))
+    columns = [
+        {"status": status, "label": STATUS_LABELS.get(status, status.title()), "tasks": grouped.get(status, [])}
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         for status in STATUS_OPTIONS
     ]
     return render_template(
@@ -240,6 +276,7 @@ def index():
     )
 
 
+<<<<<<< HEAD
 @app.route("/logs")
 @login_required
 def logs_dashboard():
@@ -261,6 +298,15 @@ def add_task():
         user = get_current_user()
         task_id = create_task(title, user["id"])
         app.logger.info("Task created: task_id=%s user_id=%s", task_id, user["id"])
+=======
+@app.route("/tasks", methods=["POST"])
+@login_required
+def add_task():
+    title = request.form.get("title", "").strip()
+    if title:
+        user = get_current_user()
+        create_task(title, user["id"])
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     return redirect(url_for("index"))
 
 
@@ -270,6 +316,7 @@ def edit_task(task_id):
     user = get_current_user()
     task = get_task(task_id, user["id"])
     if not task:
+<<<<<<< HEAD
         app.logger.warning(
             "Task edit requested for missing task_id=%s user_id=%s",
             task_id,
@@ -278,11 +325,17 @@ def edit_task(task_id):
         return redirect(url_for("index"))
     if request.method == "POST":
         title = request.form.get("title", "").strip()[:TASK_TITLE_MAX_LENGTH]
+=======
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         status = request.form.get("status") or task["status"]
         if status not in STATUS_OPTIONS:
             status = task["status"]
         if title:
             update_task(task_id, user["id"], title=title, status=status)
+<<<<<<< HEAD
             app.logger.info(
                 "Task updated: task_id=%s user_id=%s status=%s title_changed=%s",
                 task_id,
@@ -290,6 +343,8 @@ def edit_task(task_id):
                 status,
                 title != task["title"],
             )
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         return redirect(url_for("index"))
     return render_template("edit_task.html", task=task)
 
@@ -299,7 +354,10 @@ def edit_task(task_id):
 def delete_task_route(task_id):
     user = get_current_user()
     delete_task(task_id, user["id"])
+<<<<<<< HEAD
     app.logger.info("Task deleted: task_id=%s user_id=%s", task_id, user["id"])
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     return redirect(url_for("index"))
 
 
@@ -309,15 +367,19 @@ def api_update_task(task_id):
     user = get_current_user()
     task = get_task(task_id, user["id"])
     if not task:
+<<<<<<< HEAD
         app.logger.warning(
             "API update requested for missing task_id=%s user_id=%s",
             task_id,
             user["id"],
         )
+=======
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         return jsonify({"error": "task not found"}), 404
     payload = request.get_json(silent=True) or {}
     updates = {}
     if "title" in payload and isinstance(payload["title"], str):
+<<<<<<< HEAD
         title = payload["title"].strip()[:TASK_TITLE_MAX_LENGTH]
         if title:
             updates["title"] = title
@@ -337,6 +399,14 @@ def api_update_task(task_id):
         user["id"],
         ",".join(sorted(updates.keys())),
     )
+=======
+        updates["title"] = payload["title"].strip()
+    if "status" in payload and payload["status"] in STATUS_OPTIONS:
+        updates["status"] = payload["status"]
+    if not updates:
+        return jsonify({"error": "nothing to update"}), 400
+    update_task(task_id, user["id"], **updates)
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     return jsonify({"status": "ok"})
 
 
@@ -346,16 +416,24 @@ def register():
         return redirect(url_for("index"))
     error = None
     if request.method == "POST":
+<<<<<<< HEAD
         username = request.form.get("username", "").strip()[:USERNAME_MAX_LENGTH]
         password = request.form.get("password", "")
         if not username or not password:
             error = "Enter a username and password."
         elif len(password) < MIN_PASSWORD_LENGTH:
             error = f"Password must be at least {MIN_PASSWORD_LENGTH} characters."
+=======
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        if not username or not password:
+            error = "Въведете потребителско име и парола."
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         else:
             try:
                 create_user(username, password)
                 user = get_user_by_username(username)
+<<<<<<< HEAD
                 session.clear()
                 session["user_id"] = user["id"]
                 app.logger.info("User registered: user_id=%s", user["id"])
@@ -367,6 +445,12 @@ def register():
                     getattr(g, "request_id", "-"),
                 )
                 error = "That username is already taken."
+=======
+                session["user_id"] = user["id"]
+                return redirect(url_for("index"))
+            except sqlite3.IntegrityError:
+                error = "Това име вече е заето."
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     return render_template("register.html", error=error)
 
 
@@ -376,6 +460,7 @@ def login():
         return redirect(url_for("index"))
     error = None
     if request.method == "POST":
+<<<<<<< HEAD
         username = request.form.get("username", "").strip()[:USERNAME_MAX_LENGTH]
         password = request.form.get("password", "")
         user = verify_user(username, password)
@@ -391,17 +476,34 @@ def login():
             session.clear()
             session["user_id"] = user["id"]
             app.logger.info("User logged in: user_id=%s", user["id"])
+=======
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user = verify_user(username, password)
+        if not user:
+            error = "Невалидни идентификационни данни."
+        else:
+            session["user_id"] = user["id"]
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
             return redirect(url_for("index"))
     return render_template("login.html", error=error)
 
 
 @app.route("/logout")
 def logout():
+<<<<<<< HEAD
     user_id = session.get("user_id", "anonymous")
     session.clear()
     app.logger.info("User logged out: user_id=%s", user_id)
+=======
+    session.pop("user_id", None)
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     return redirect(url_for("login"))
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     app.run(debug=os.environ.get("TASKBOARD_DEBUG") == "1")
+=======
+    app.run(debug=True)
+>>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
