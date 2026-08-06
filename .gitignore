@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.vendor/
+.pip-temp/
+.flask-dev.*.log
+logs/*.log
+logs/*.log.*
+*.sqlite
+*.db
+sqlite3.exe

@@ -3,14 +3,14 @@
 {% block content %}
   <section class="list">
     <div class="summary">
-      <span>Завършени задачи: {{ done }} / {{ total if total else 0 }}</span>
-      <span>Следващите стъпки остават под колоните</span>
+      <span>Completed tasks: {{ done }} / {{ total if total else 0 }}</span>
+      <span>Next steps stay organized by column</span>
     </div>
 
     <div class="suggestions">
       <header>
-        <h3>Пролетно табло за почистване</h3>
-        <p>Изберете идеи от списъка и добавете свои задачи към колоните по-долу.</p>
+        <h3>Spring Cleaning Board</h3>
+        <p>Pick ideas from the list and add your own tasks to the columns below.</p>
       </header>
       <div class="suggestions-grid">
         {% for suggestion in suggestions %}
@@ -23,20 +23,20 @@
       <div class="suggestion-cta">
         <img
           src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
-          alt="Пастелен букет"
+          alt="Pastel bouquet"
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
-          alt="Цветя на маса"
+          alt="Flowers on a table"
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
-          alt="Лалета"
+          alt="Tulips"
           loading="lazy"
         />
-        <p>Добавете задача в полето по-долу, след което премествайте картите между колоните.</p>
+        <p>Add a task below, then move cards between columns as work progresses.</p>
       </div>
     </div>
 
@@ -45,35 +45,51 @@
           <div class="tasks-column" data-status="{{ column.status }}">
           <header>
             <h3>{{ column.label }}</h3>
-            <p>{{ column.tasks|length }} карти</p>
+            <p><span data-column-count>{{ column.tasks|length }}</span> cards</p>
           </header>
             <ul id="column-{{ column.status }}">
             {% for task in column.tasks %}
-              <li data-task-id="{{ task.id }}" draggable="true" data-status="{{ task.status }}">
+              <li data-task-id="{{ task.id }}" data-status="{{ task.status }}">
                 <div class="task-line">
+                  <button type="button" class="drag-handle" aria-label="Move task" title="Move task"></button>
                   <label>
                     <span class="task-title" contenteditable="true" data-task-id="{{ task.id }}">{{ task.title }}</span>
                   </label>
                 </div>
                 <div class="task-meta">
-                  <select class="status-select" data-task-id="{{ task.id }}" data-current-status="{{ task.status }}">
-                    {% for status in status_options %}
-                      <option value="{{ status }}" {% if status == task.status %}selected{% endif %}>
-                        {{ status_labels[status] }}
-                      </option>
-                    {% endfor %}
-                  </select>
+                  <form
+                    action="{{ url_for('edit_task', task_id=task.id) }}"
+                    method="post"
+                    class="status-form"
+                  >
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="title" value="{{ task.title }}" data-task-title-input="{{ task.id }}" />
+                    <select
+                      class="status-select"
+                      name="status"
+                      data-task-id="{{ task.id }}"
+                      data-current-status="{{ task.status }}"
+                      onchange="this.form.requestSubmit()"
+                    >
+                      {% for status in status_options %}
+                        <option value="{{ status }}" {% if status == task.status %}selected{% endif %}>
+                          {{ status_labels[status] }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </form>
                   <div>
-                    <a href="{{ url_for('edit_task', task_id=task.id) }}">Редакция</a>
+                    <a href="{{ url_for('edit_task', task_id=task.id) }}">Edit</a>
                     <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="post" style="display:inline;">
-                      <button type="submit" class="secondary">Премахни</button>
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                      <button type="submit" class="secondary">Remove</button>
                     </form>
                   </div>
                 </div>
               </li>
             {% else %}
-              <li>
-                <p style="margin: 0; font-weight: 600;">Няма задачи в тази колона.</p>
+              <li class="empty-column">
+                <p style="margin: 0; font-weight: 600;">No tasks in this column.</p>
               </li>
             {% endfor %}
           </ul>
@@ -83,8 +99,9 @@
 
     <div class="add-task-form">
       <form action="{{ url_for('add_task') }}" method="post" style="display: grid; gap: 0.5rem;">
-        <input type="text" name="title" placeholder="Добави нова задача" required autocomplete="off" />
-        <button type="submit">Добави</button>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="text" name="title" placeholder="Add a new task" required autocomplete="off" />
+        <button type="submit">Add</button>
       </form>
     </div>
   </section>

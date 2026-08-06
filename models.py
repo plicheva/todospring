@@ -9,12 +9,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 DB_PATH = Path(__file__).resolve().parent / "db.sqlite"
 
 SPRING_TASK_SUGGESTIONS = [
-    "Прегледайте сигурността: сменете батериите на детекторите и проверете аварийните планове.",
-    "Поразчистете зоните за работа и спане, изхвърлете излишното и организирайте основни принадлежности.",
-    "Почистете и дезинфекцирайте често докосваните повърхности и превантивно освежете въздуха.",
-    "Осигурете свежи текстили – изпиране на завеси, облекло и смяна на постелки.",
-    "Прегледайте хладилника/хранителния шкаф, открийте и изхвърлете изтеклите продукти и преценете седмично меню.",
-    "Дигитално прочистване: архивирайте важните файлове, изтрийте дублирани снимки, актуализирайте пароли.",
+    "Review home safety: replace detector batteries and check emergency plans.",
+    "Declutter work and sleep areas, discard extras, and organize daily essentials.",
+    "Clean and disinfect high-touch surfaces, then refresh the air preventively.",
+    "Freshen textiles: wash curtains, rotate clothing, and change bedding.",
+    "Check the refrigerator and pantry, discard expired food, and plan a weekly menu.",
+    "Do a digital cleanup: archive important files, remove duplicate photos, and update passwords.",
 ]
 
 
@@ -54,10 +54,10 @@ STATUS_DONE = "done"
 STATUS_OPTIONS = [STATUS_TODO, STATUS_IN_PROGRESS, STATUS_IN_REVIEW, STATUS_DONE]
 
 STATUS_LABELS = {
-    STATUS_TODO: "Чакащи",
-    STATUS_IN_PROGRESS: "Работа",
-    STATUS_IN_REVIEW: "На преглед",
-    STATUS_DONE: "Готови",
+    STATUS_TODO: "To Do",
+    STATUS_IN_PROGRESS: "In Progress",
+    STATUS_IN_REVIEW: "In Review",
+    STATUS_DONE: "Done",
 }
 
 
@@ -76,6 +76,25 @@ def _recreate_task_table(conn: sqlite3.Connection) -> None:
     )
 
 
+def _ensure_task_columns(conn: sqlite3.Connection, columns: set[str]) -> None:
+    if "status" not in columns:
+        conn.execute(
+            "ALTER TABLE tasks ADD COLUMN status TEXT NOT NULL DEFAULT 'todo'"
+        )
+        columns.add("status")
+        if "done" in columns:
+            conn.execute(
+                "UPDATE tasks SET status=? WHERE done=1",
+                (STATUS_DONE,),
+            )
+    if "created_at" not in columns:
+        conn.execute("ALTER TABLE tasks ADD COLUMN created_at TEXT")
+        conn.execute(
+            "UPDATE tasks SET created_at=CURRENT_TIMESTAMP "
+            "WHERE created_at IS NULL OR created_at=''"
+        )
+
+
 def init_db(path: Optional[str] = None) -> None:
     with connection(path) as conn:
         conn.executescript(
@@ -90,8 +109,12 @@ def init_db(path: Optional[str] = None) -> None:
         )
         task_info = conn.execute("PRAGMA table_info(tasks)").fetchall()
         columns = {row["name"] for row in task_info}
-        if not columns or "user_id" not in columns:
+        if not columns:
             _recreate_task_table(conn)
+        elif "user_id" not in columns:
+            _recreate_task_table(conn)
+        else:
+            _ensure_task_columns(conn, columns)
         conn.commit()
 
 

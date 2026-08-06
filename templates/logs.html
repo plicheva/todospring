@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block main_class %}logs-page{% endblock %}
+
+{% block content %}
+  <section class="logs-shell">
+    <div class="logs-top">
+      <div>
+        <h2>Application Logs</h2>
+        <p class="logs-subtle">
+          {{ dashboard.summary.file_count }} files in {{ dashboard.log_dir }} |
+          {{ dashboard.summary.total_entries }} of {{ dashboard.summary.unfiltered_total_entries }} entries |
+          latest {{ dashboard.summary.latest_time }}
+        </p>
+      </div>
+      <a class="logs-action-link" href="{{ url_for('logs_dashboard') }}">Refresh</a>
+    </div>
+
+    <form class="logs-filter" method="get" action="{{ url_for('logs_dashboard') }}">
+      <label>
+        Search
+        <input type="text" name="q" value="{{ dashboard.filters.q }}" placeholder="message, path, request id" />
+      </label>
+      <label>
+        Level
+        <select name="level">
+          <option value="">All</option>
+          {% for level in ["INFO", "WARNING", "ERROR", "CRITICAL", "UNKNOWN"] %}
+            <option value="{{ level }}" {% if dashboard.filters.level == level %}selected{% endif %}>{{ level }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Apply</button>
+      <a class="logs-action-link" href="{{ url_for('logs_dashboard') }}">Clear</a>
+    </form>
+
+    <div class="metric-grid">
+      <div class="metric-card">
+        <h3>Total Entries</h3>
+        <div class="metric-value">{{ dashboard.summary.total_entries }}</div>
+        <div class="metric-note">{{ dashboard.levels|length }} levels</div>
+      </div>
+      <div class="metric-card">
+        <h3>Requests</h3>
+        <div class="metric-value">{{ dashboard.summary.request_count }}</div>
+        <div class="metric-note">{{ dashboard.summary.avg_latency }} ms avg</div>
+      </div>
+      <div class="metric-card">
+        <h3>Warnings</h3>
+        <div class="metric-value">{{ dashboard.summary.warning_count }}</div>
+        <div class="metric-note warning">watch list</div>
+      </div>
+      <div class="metric-card">
+        <h3>Errors</h3>
+        <div class="metric-value">{{ dashboard.summary.error_count }}</div>
+        <div class="metric-note error">exceptions</div>
+      </div>
+    </div>
+
+    <div class="logs-grid">
+      <section class="log-panel wide">
+        <div class="panel-title">
+          <h3>Requests Over Time</h3>
+          {% if dashboard.summary.slowest_request %}
+            <span>
+              slowest {{ dashboard.summary.slowest_request.request.duration }} ms |
+              {{ dashboard.summary.slowest_request.request.method }}
+              {{ dashboard.summary.slowest_request.request.path }}
+            </span>
+          {% else %}
+            <span>no request lines yet</span>
+          {% endif %}
+        </div>
+        {% if dashboard.timeline %}
+          <div class="timeline">
+            {% for point in dashboard.timeline %}
+              <div class="timeline-bar">
+                <span style="height: {{ point.bar_pct }}%;"></span>
+                <strong>{{ point.count }}</strong>
+                <small>{{ point.label }}</small>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-state">No parsed request entries yet.</p>
+        {% endif %}
+      </section>
+
+      <section class="log-panel">
+        <div class="panel-title">
+          <h3>Top Paths</h3>
+          <span>by request count</span>
+        </div>
+        {% if dashboard.top_paths %}
+          <div class="meter-list">
+            {% for item in dashboard.top_paths %}
+              <div class="meter-row">
+                <span>{{ item.path }}</span>
+                <div class="meter"><span style="width: {{ item.bar_pct }}%;"></span></div>
+                <strong>{{ item.count }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-state">No request paths found.</p>
+        {% endif %}
+      </section>
+
+      <section class="log-panel">
+        <div class="panel-title">
+          <h3>Status Codes</h3>
+          <span>HTTP results</span>
+        </div>
+        {% if dashboard.statuses %}
+          <div class="meter-list">
+            {% for item in dashboard.statuses %}
+              <div class="meter-row">
+                <span class="status-chip status-{{ item.family }}">{{ item.code }}</span>
+                <div class="meter"><span style="width: {{ item.bar_pct }}%;"></span></div>
+                <strong>{{ item.count }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-state">No HTTP status codes found.</p>
+        {% endif %}
+      </section>
+
+      <section class="log-panel">
+        <div class="panel-title">
+          <h3>Levels</h3>
+          <span>log severity</span>
+        </div>
+        {% if dashboard.levels %}
+          <div class="compact-list">
+            {% for item in dashboard.levels %}
+              <div class="compact-row">
+                <span class="log-level level-{{ item.label|lower }}">{{ item.label }}</span>
+                <strong>{{ item.count }} | {{ item.pct }}%</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-state">No level data found.</p>
+        {% endif %}
+      </section>
+
+      <section class="log-panel">
+        <div class="panel-title">
+          <h3>App Actions</h3>
+          <span>task and user events</span>
+        </div>
+        {% if dashboard.actions_summary %}
+          <div class="compact-list">
+            {% for item in dashboard.actions_summary %}
+              <div class="compact-row">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.count }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-state">No app actions found.</p>
+        {% endif %}
+      </section>
+
+      <section class="log-panel wide">
+        <div class="panel-title">
+          <h3>Recent Problems</h3>
+          <span>warnings, errors, and 4xx/5xx requests</span>
+        </div>
+        {% if dashboard.problem_entries %}
+          <div class="logs-table-wrap">
+            <table class="logs-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Level</th>
+                  <th>Request ID</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in dashboard.problem_entries %}
+                  <tr>
+                    <td>{{ entry.time_label }}</td>
+                    <td><span class="log-level level-{{ entry.level|lower }}">{{ entry.level }}</span></td>
+                    <td>{{ entry.request.request_id if entry.request else "-" }}</td>
+                    <td class="log-message">{{ entry.message }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-state">No warnings, errors, or failed requests in the current view.</p>
+        {% endif %}
+      </section>
+
+      <section class="log-panel wide">
+        <div class="panel-title">
+          <h3>Recent Log Entries</h3>
+          <span>latest 80 parsed lines</span>
+        </div>
+        {% if dashboard.entries %}
+          <div class="logs-table-wrap">
+            <table class="logs-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Level</th>
+                  <th>Request ID</th>
+                  <th>Logger</th>
+                  <th>Message</th>
+                  <th>File</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in dashboard.entries %}
+                  <tr>
+                    <td>{{ entry.time_label }}</td>
+                    <td><span class="log-level level-{{ entry.level|lower }}">{{ entry.level }}</span></td>
+                    <td>{{ entry.request.request_id if entry.request else "-" }}</td>
+                    <td>{{ entry.logger }}</td>
+                    <td class="log-message">{{ entry.message }}</td>
+                    <td>{{ entry.source }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-state">No log lines found in the logs folder.</p>
+        {% endif %}
+      </section>
+    </div>
+  </section>
+{% endblock %}

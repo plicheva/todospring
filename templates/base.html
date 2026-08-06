@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Spring To‑Do List</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <title>Spring Task Board</title>
     <style>
       html {
         height: 100%;
@@ -14,7 +15,6 @@
         --accent: #0ea5e9;
         --accent-strong: #2563eb;
         --border-light: rgba(14, 165, 233, 0.4);
-        --done-bg: rgba(209, 250, 229, 0.85);
         font-family: "Segoe UI", system-ui, sans-serif;
         color: var(--text);
         background: #fdfaf6;
@@ -28,7 +28,7 @@
         flex-direction: column;
         background: linear-gradient(180deg, #fdfaf6 0%, #f4f1f8 60%, #eefcf5 100%);
       }
-      header {
+      .site-header {
         padding: 1rem clamp(0.75rem, 4vw, 2rem);
         background: linear-gradient(135deg, #85f7c0, #a0eafd);
         color: var(--text);
@@ -69,11 +69,11 @@
         font-size: 0.9rem;
         color: #0f172a;
       }
-      header h1 {
+      .site-header h1 {
         margin: 0;
         font-size: clamp(1.6rem, 4vw, 2.6rem);
       }
-      header p {
+      .site-header p {
         margin: 0;
         font-weight: 500;
       }
@@ -95,7 +95,8 @@
         margin: 0;
       }
       input[type="text"],
-      textarea {
+      input[type="password"],
+      select {
         width: 100%;
         padding: 0.6rem 0.7rem;
         border-radius: 0.65rem;
@@ -103,6 +104,10 @@
         font-size: 1rem;
         background: #fff;
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+      }
+      select {
+        width: auto;
+        max-width: 100%;
       }
       button {
         border: none;
@@ -148,10 +153,49 @@
         transform: translateY(-1px);
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
       }
+      li.dragging {
+        opacity: 0.92;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+      }
+      li.drag-placeholder {
+        border: 1px dashed rgba(37, 99, 235, 0.45);
+        background: rgba(219, 234, 254, 0.55);
+        box-shadow: none;
+      }
+      li.drag-placeholder:hover {
+        transform: none;
+      }
       .task-line {
         display: flex;
         gap: 0.5rem;
         align-items: center;
+      }
+      .drag-handle {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border-radius: 8px;
+        background: rgba(14, 165, 233, 0.12);
+        color: #2563eb;
+        cursor: grab;
+        flex: 0 0 auto;
+        line-height: 1;
+        position: relative;
+        touch-action: none;
+        user-select: none;
+      }
+      .drag-handle::before {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 17px;
+        margin: 5px auto;
+        background-image: radial-gradient(circle, currentColor 1.6px, transparent 1.8px);
+        background-size: 4px 6px;
+        background-repeat: repeat-y;
+      }
+      .drag-handle:active {
+        cursor: grabbing;
       }
       .task-title {
         font-weight: 600;
@@ -248,19 +292,16 @@
         border: 2px solid rgba(14, 165, 233, 0.4);
         box-shadow: 0 10px 25px rgba(15, 23, 42, 0.15);
       }
-      .tasks-section {
-        display: flex;
-        gap: 1rem;
-        flex-wrap: wrap;
-        margin-top: 1rem;
-        flex: 1;
-        min-height: 0;
-      }
       .kanban-board {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1rem;
         width: 100%;
+        background: rgba(240, 248, 255, 0.7);
+        border-radius: 1.25rem;
+        padding: 1rem;
+        border: 1px solid rgba(14, 165, 233, 0.3);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
       }
       .tasks-column {
         flex: 1;
@@ -288,19 +329,10 @@
         gap: 0.4rem;
         overflow-y: auto;
         max-height: 430px;
+        min-height: 90px;
       }
       .add-task-form {
         margin-top: 1rem;
-      }
-      .kanban-board {
-        background: rgba(240, 248, 255, 0.7);
-        border-radius: 1.25rem;
-        padding: 1rem;
-        border: 1px solid rgba(14, 165, 233, 0.3);
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
-      }
-      .tasks-column.done-column {
-        background: var(--done-bg);
       }
       .tasks-column header {
         margin-bottom: 0.5rem;
@@ -313,48 +345,362 @@
         margin: 0;
         color: #475569;
       }
+      .system-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 0.35rem;
+        border-radius: 8px;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        background: rgba(255, 255, 255, 0.88);
+        color: #0f172a;
+      }
+      .system-status strong {
+        font-size: 0.95rem;
+      }
+      .system-status span {
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .system-status-ok {
+        border-color: rgba(34, 197, 94, 0.45);
+        background: rgba(240, 253, 244, 0.92);
+      }
+      .system-status-warn {
+        border-color: rgba(245, 158, 11, 0.5);
+        background: rgba(255, 251, 235, 0.94);
+      }
+      .system-status-bad {
+        border-color: rgba(244, 63, 94, 0.5);
+        background: rgba(255, 241, 242, 0.94);
+      }
+      .system-status-quiet {
+        border-color: rgba(14, 165, 233, 0.35);
+        background: rgba(240, 249, 255, 0.94);
+      }
+      .page.logs-page {
+        width: 100%;
+        max-width: 1240px;
+      }
+      .logs-shell {
+        background: #15171c;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 8px;
+        color: #e5e7eb;
+        padding: clamp(0.75rem, 2vw, 1.25rem);
+        box-shadow: 0 22px 45px rgba(15, 23, 42, 0.18);
+      }
+      .logs-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .logs-top h2,
+      .log-panel h3,
+      .metric-card h3 {
+        margin: 0;
+      }
+      .logs-top h2 {
+        font-size: 1.5rem;
+      }
+      .logs-subtle {
+        color: #aab4c3;
+        margin: 0.2rem 0 0;
+      }
+      .logs-action-link {
+        color: #08111f;
+        background: #7dd3fc;
+        border-radius: 8px;
+        font-weight: 700;
+        padding: 0.55rem 0.8rem;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .logs-filter {
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) minmax(130px, auto) auto auto;
+        gap: 0.75rem;
+        align-items: end;
+        margin-bottom: 0.75rem;
+      }
+      .logs-filter label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        color: #aab4c3;
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .logs-filter input,
+      .logs-filter select {
+        width: 100%;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .metric-card,
+      .log-panel {
+        background: #1e232b;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 8px;
+      }
+      .metric-card {
+        min-height: 92px;
+        padding: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .metric-card h3 {
+        color: #aab4c3;
+        font-size: 0.85rem;
+        font-weight: 700;
+      }
+      .metric-value {
+        color: #f8fafc;
+        font-size: 1.9rem;
+        font-weight: 800;
+        line-height: 1;
+      }
+      .metric-note {
+        color: #93c5fd;
+        font-size: 0.85rem;
+      }
+      .metric-note.warning {
+        color: #fbbf24;
+      }
+      .metric-note.error {
+        color: #fb7185;
+      }
+      .logs-grid {
+        display: grid;
+        grid-template-columns: 1.3fr 0.9fr;
+        gap: 0.75rem;
+      }
+      .log-panel {
+        padding: 0.85rem;
+        min-width: 0;
+      }
+      .log-panel.wide {
+        grid-column: span 2;
+      }
+      .panel-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: baseline;
+        margin-bottom: 0.75rem;
+      }
+      .panel-title h3 {
+        color: #f8fafc;
+        font-size: 1rem;
+      }
+      .panel-title span {
+        color: #94a3b8;
+        font-size: 0.82rem;
+      }
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(14, minmax(26px, 1fr));
+        gap: 0.5rem;
+        align-items: end;
+        min-height: 145px;
+      }
+      .timeline-bar {
+        display: flex;
+        height: 138px;
+        min-width: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.35rem;
+        color: #94a3b8;
+        font-size: 0.72rem;
+      }
+      .timeline-bar span:first-child {
+        width: 100%;
+        min-height: 8px;
+        border-radius: 6px 6px 2px 2px;
+        background: linear-gradient(180deg, #22d3ee, #22c55e);
+      }
+      .meter-list,
+      .compact-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+      .meter-row {
+        display: grid;
+        grid-template-columns: minmax(92px, 1fr) minmax(130px, 2fr) 42px;
+        gap: 0.6rem;
+        align-items: center;
+        color: #dbeafe;
+      }
+      .meter {
+        height: 9px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.18);
+      }
+      .meter span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #60a5fa, #34d399);
+      }
+      .compact-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        color: #dbeafe;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+        padding-bottom: 0.45rem;
+      }
+      .status-chip,
+      .log-level {
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 58px;
+        padding: 0.15rem 0.45rem;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+      .status-2xx,
+      .level-info {
+        background: rgba(34, 197, 94, 0.16);
+        color: #86efac;
+      }
+      .status-3xx {
+        background: rgba(96, 165, 250, 0.16);
+        color: #93c5fd;
+      }
+      .status-4xx,
+      .level-warning {
+        background: rgba(251, 191, 36, 0.16);
+        color: #fcd34d;
+      }
+      .status-5xx,
+      .level-error,
+      .level-critical {
+        background: rgba(244, 63, 94, 0.16);
+        color: #fda4af;
+      }
+      .logs-table-wrap {
+        overflow-x: auto;
+      }
+      .logs-table {
+        border-collapse: collapse;
+        color: #dbeafe;
+        min-width: 760px;
+        width: 100%;
+      }
+      .logs-table th,
+      .logs-table td {
+        border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+        padding: 0.45rem 0.5rem;
+        text-align: left;
+        vertical-align: top;
+      }
+      .logs-table th {
+        color: #94a3b8;
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+      .log-message {
+        max-width: 560px;
+        overflow-wrap: anywhere;
+      }
+      .empty-state {
+        color: #aab4c3;
+        margin: 0;
+      }
       @media (max-width: 640px) {
         .task-meta {
           flex-direction: column;
           align-items: flex-start;
         }
       }
+      @media (max-width: 900px) {
+        .metric-grid,
+        .logs-grid {
+          grid-template-columns: 1fr;
+        }
+        .log-panel.wide {
+          grid-column: span 1;
+        }
+        .timeline {
+          grid-template-columns: repeat(7, minmax(26px, 1fr));
+        }
+      }
+      @media (max-width: 640px) {
+        .logs-top,
+        .logs-filter,
+        .system-status,
+        .meter-row {
+          grid-template-columns: 1fr;
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
     </style>
   </head>
   <body>
-    <header>
+    <header class="site-header">
       <div class="user-nav">
         {% if current_user %}
-          <span>Вие сте {{ current_user.username }}</span>
-          <a href="{{ url_for('logout') }}">Изход</a>
+          <a href="{{ url_for('index') }}">Board</a>
+          <a href="{{ url_for('logs_dashboard') }}">Logs</a>
+          <span>Signed in as {{ current_user.username }}</span>
+          <a href="{{ url_for('logout') }}">Log Out</a>
         {% else %}
-          <a href="{{ url_for('login') }}">Вход</a>
-          <a href="{{ url_for('register') }}">Регистрация</a>
+          <a href="{{ url_for('login') }}">Log In</a>
+          <a href="{{ url_for('register') }}">Register</a>
         {% endif %}
       </div>
-      <h1>Пролетно освежаване</h1>
-      <p>Съберете разцъфващи идеи и лични задачи на един екран.</p>
+      {% if daily_status %}
+        <div class="system-status system-status-{{ daily_status.tone }}">
+          <strong>{{ daily_status.message }}</strong>
+          <span>
+            {{ daily_status.request_count }} requests today |
+            {{ daily_status.avg_latency }} ms avg |
+            {{ daily_status.warning_count }} warnings |
+            {{ daily_status.error_count }} errors
+          </span>
+        </div>
+      {% endif %}
+      <h1>Spring Refresh</h1>
+      <p>Collect fresh ideas and personal tasks on one board.</p>
       <div class="hero-gallery" aria-hidden="true">
         <img
           src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
-          alt="Аранжировка от полски цветя"
+          alt="Arrangement of wildflowers"
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
-          alt="Пастелен букет на маса"
+          alt="Pastel bouquet on a table"
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
-          alt="Лалета и зелената свежест"
+          alt="Tulips and fresh greenery"
           loading="lazy"
         />
       </div>
     </header>
-    <main class="page">
+    <main class="page {% block main_class %}{% endblock %}">
       {% block content %}{% endblock %}
     </main>
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
+    <script src="{{ url_for('static', filename='main.js') }}?v={{ asset_version }}"></script>
   </body>
 </html>
