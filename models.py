@@ -9,25 +9,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 DB_PATH = Path(__file__).resolve().parent / "db.sqlite"
 
 SPRING_TASK_SUGGESTIONS = [
-<<<<<<< HEAD
     "Review home safety: replace detector batteries and check emergency plans.",
     "Declutter work and sleep areas, discard extras, and organize daily essentials.",
     "Clean and disinfect high-touch surfaces, then refresh the air preventively.",
     "Freshen textiles: wash curtains, rotate clothing, and change bedding.",
     "Check the refrigerator and pantry, discard expired food, and plan a weekly menu.",
     "Do a digital cleanup: archive important files, remove duplicate photos, and update passwords.",
-=======
-    "Освободете една лавица или чекмедже от излишни вещи",
-    "Изтъркайте дръжки и ключове на светлините",
-    "Подредете канцеларските материали и изхвърлете счупените",
-    "Изчистете хладилника и премахнете изтекли продукти",
-    "Освежете текстилите: възглавници, завеси, покривки",
-    "Прегледайте обувки и дрехи за дарение",
-    "Почистете килимите и постелките",
-    "Измийте прозорците, за да влезе повече светлина",
-    "Подредете кабелите и предпазните ленти",
-    "Планирайте кратка дигитална очистка (имейли, файлове)",
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 ]
 
 
@@ -67,17 +54,10 @@ STATUS_DONE = "done"
 STATUS_OPTIONS = [STATUS_TODO, STATUS_IN_PROGRESS, STATUS_IN_REVIEW, STATUS_DONE]
 
 STATUS_LABELS = {
-<<<<<<< HEAD
     STATUS_TODO: "To Do",
     STATUS_IN_PROGRESS: "In Progress",
     STATUS_IN_REVIEW: "In Review",
     STATUS_DONE: "Done",
-=======
-    STATUS_TODO: "Чакащи",
-    STATUS_IN_PROGRESS: "Работа",
-    STATUS_IN_REVIEW: "На преглед",
-    STATUS_DONE: "Готови",
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 }
 
 
@@ -96,7 +76,6 @@ def _recreate_task_table(conn: sqlite3.Connection) -> None:
     )
 
 
-<<<<<<< HEAD
 def _ensure_task_columns(conn: sqlite3.Connection, columns: set[str]) -> None:
     if "status" not in columns:
         conn.execute(
@@ -116,8 +95,6 @@ def _ensure_task_columns(conn: sqlite3.Connection, columns: set[str]) -> None:
         )
 
 
-=======
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 def init_db(path: Optional[str] = None) -> None:
     with connection(path) as conn:
         conn.executescript(
@@ -132,17 +109,12 @@ def init_db(path: Optional[str] = None) -> None:
         )
         task_info = conn.execute("PRAGMA table_info(tasks)").fetchall()
         columns = {row["name"] for row in task_info}
-<<<<<<< HEAD
         if not columns:
             _recreate_task_table(conn)
         elif "user_id" not in columns:
             _recreate_task_table(conn)
         else:
             _ensure_task_columns(conn, columns)
-=======
-        if not columns or "user_id" not in columns:
-            _recreate_task_table(conn)
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         conn.commit()
 
 

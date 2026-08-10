@@ -3,24 +3,14 @@
 {% block content %}
   <section class="list">
     <div class="summary">
-<<<<<<< HEAD
       <span>Completed tasks: {{ done }} / {{ total if total else 0 }}</span>
       <span>Next steps stay organized by column</span>
-=======
-      <span>Завършени задачи: {{ done }} / {{ total if total else 0 }}</span>
-      <span>Следващите стъпки остават под колоните</span>
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     </div>
 
     <div class="suggestions">
       <header>
-<<<<<<< HEAD
         <h3>Spring Cleaning Board</h3>
         <p>Pick ideas from the list and add your own tasks to the columns below.</p>
-=======
-        <h3>Пролетно табло за почистване</h3>
-        <p>Изберете идеи от списъка и добавете свои задачи към колоните по-долу.</p>
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       </header>
       <div class="suggestions-grid">
         {% for suggestion in suggestions %}
@@ -33,35 +23,20 @@
       <div class="suggestion-cta">
         <img
           src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=600&q=80"
-<<<<<<< HEAD
           alt="Pastel bouquet"
-=======
-          alt="Пастелен букет"
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=600&q=80"
-<<<<<<< HEAD
           alt="Flowers on a table"
-=======
-          alt="Цветя на маса"
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
           loading="lazy"
         />
         <img
           src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=600&q=80"
-<<<<<<< HEAD
           alt="Tulips"
           loading="lazy"
         />
         <p>Add a task below, then move cards between columns as work progresses.</p>
-=======
-          alt="Лалета"
-          loading="lazy"
-        />
-        <p>Добавете задача в полето по-долу, след което премествайте картите между колоните.</p>
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       </div>
     </div>
 
@@ -70,7 +45,6 @@
           <div class="tasks-column" data-status="{{ column.status }}">
           <header>
             <h3>{{ column.label }}</h3>
-<<<<<<< HEAD
             <p><span data-column-count>{{ column.tasks|length }}</span> cards</p>
           </header>
             <ul id="column-{{ column.status }}">
@@ -78,20 +52,11 @@
               <li data-task-id="{{ task.id }}" data-status="{{ task.status }}">
                 <div class="task-line">
                   <button type="button" class="drag-handle" aria-label="Move task" title="Move task"></button>
-=======
-            <p>{{ column.tasks|length }} карти</p>
-          </header>
-            <ul id="column-{{ column.status }}">
-            {% for task in column.tasks %}
-              <li data-task-id="{{ task.id }}" draggable="true" data-status="{{ task.status }}">
-                <div class="task-line">
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
                   <label>
                     <span class="task-title" contenteditable="true" data-task-id="{{ task.id }}">{{ task.title }}</span>
                   </label>
                 </div>
                 <div class="task-meta">
-<<<<<<< HEAD
                   <form
                     action="{{ url_for('edit_task', task_id=task.id) }}"
                     method="post"
@@ -118,31 +83,13 @@
                     <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="post" style="display:inline;">
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                       <button type="submit" class="secondary">Remove</button>
-=======
-                  <select class="status-select" data-task-id="{{ task.id }}" data-current-status="{{ task.status }}">
-                    {% for status in status_options %}
-                      <option value="{{ status }}" {% if status == task.status %}selected{% endif %}>
-                        {{ status_labels[status] }}
-                      </option>
-                    {% endfor %}
-                  </select>
-                  <div>
-                    <a href="{{ url_for('edit_task', task_id=task.id) }}">Редакция</a>
-                    <form action="{{ url_for('delete_task_route', task_id=task.id) }}" method="post" style="display:inline;">
-                      <button type="submit" class="secondary">Премахни</button>
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
                     </form>
                   </div>
                 </div>
               </li>
             {% else %}
-<<<<<<< HEAD
               <li class="empty-column">
                 <p style="margin: 0; font-weight: 600;">No tasks in this column.</p>
-=======
-              <li>
-                <p style="margin: 0; font-weight: 600;">Няма задачи в тази колона.</p>
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
               </li>
             {% endfor %}
           </ul>
@@ -152,14 +99,9 @@
 
     <div class="add-task-form">
       <form action="{{ url_for('add_task') }}" method="post" style="display: grid; gap: 0.5rem;">
-<<<<<<< HEAD
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="text" name="title" placeholder="Add a new task" required autocomplete="off" />
         <button type="submit">Add</button>
-=======
-        <input type="text" name="title" placeholder="Добави нова задача" required autocomplete="off" />
-        <button type="submit">Добави</button>
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       </form>
     </div>
   </section>

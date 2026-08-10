@@ -15,44 +15,25 @@ def test_user_task_isolation(temp_db):
     alice_id = models.create_user("alice", "pass123")
     bob_id = models.create_user("bob", "secret")
 
-<<<<<<< HEAD
     models.create_task("Polish the table", alice_id)
     models.create_task("Organize the cabinet", bob_id)
-=======
-    models.create_task("Полиране на масата", alice_id)
-    models.create_task("Организиране на шкаф", bob_id)
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 
     alice_tasks = models.get_tasks(alice_id)
     bob_tasks = models.get_tasks(bob_id)
 
     assert len(alice_tasks) == 1
-<<<<<<< HEAD
     assert alice_tasks[0]["title"] == "Polish the table"
     assert bob_tasks[0]["title"] == "Organize the cabinet"
-=======
-    assert alice_tasks[0]["title"] == "Полиране на масата"
-    assert bob_tasks[0]["title"] == "Организиране на шкаф"
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 
 
 def test_task_updates_and_deletes(temp_db):
     user_id = models.create_user("carol", "pass123")
-<<<<<<< HEAD
     task_id = models.create_task("Sort clothes", user_id)
 
     models.update_task(task_id, user_id, title="Sort clothes and shoes", status=models.STATUS_DONE)
     task = models.get_task(task_id, user_id)
 
     assert task["title"] == "Sort clothes and shoes"
-=======
-    task_id = models.create_task("Подреждане на дрехи", user_id)
-
-    models.update_task(task_id, user_id, title="Подреждане на дрехи и обувки", status=models.STATUS_DONE)
-    task = models.get_task(task_id, user_id)
-
-    assert task["title"] == "Подреждане на дрехи и обувки"
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     assert task["status"] == models.STATUS_DONE
 
     models.delete_task(task_id, user_id)
@@ -71,18 +52,13 @@ def test_auth_helpers(temp_db):
 
 def test_status_transitions(temp_db):
     user_id = models.create_user("echo", "pw")
-<<<<<<< HEAD
     task_id = models.create_task("Cleaning", user_id)
-=======
-    task_id = models.create_task("Почистване", user_id)
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 
     models.update_task(task_id, user_id, status=models.STATUS_IN_PROGRESS)
     assert models.get_task(task_id, user_id)["status"] == models.STATUS_IN_PROGRESS
 
     models.update_task(task_id, user_id, status=models.STATUS_IN_REVIEW)
     assert models.get_task(task_id, user_id)["status"] == models.STATUS_IN_REVIEW
-<<<<<<< HEAD
 
 
 def test_legacy_done_column_migrates_to_status(tmp_path, monkeypatch):
@@ -120,5 +96,3 @@ def test_legacy_done_column_migrates_to_status(tmp_path, monkeypatch):
 
     models.update_task(tasks[1]["id"], 1, status=models.STATUS_IN_PROGRESS)
     assert models.get_task(tasks[1]["id"], 1)["status"] == models.STATUS_IN_PROGRESS
-=======
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046

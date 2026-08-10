@@ -1,13 +1,9 @@
 function patchTask(taskId, payload) {
-<<<<<<< HEAD
   const csrfToken = document.querySelector("meta[name='csrf-token']")?.content || "";
-=======
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
   return fetch(`/api/tasks/${taskId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-<<<<<<< HEAD
       "X-CSRF-Token": csrfToken,
     },
     body: JSON.stringify(payload),
@@ -59,20 +55,12 @@ function restoreDraggedCard(state) {
   }
 }
 
-=======
-    },
-    body: JSON.stringify(payload),
-  });
-}
-
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 function moveTaskElement(taskId, status) {
   const element = document.querySelector(`li[data-task-id="${taskId}"]`);
   const targetList = document.getElementById(`column-${status}`);
   if (!element || !targetList) {
     return;
   }
-<<<<<<< HEAD
   const sourceColumn = element.closest(".tasks-column");
   const targetColumn = targetList.closest(".tasks-column");
   const emptyState = targetList.querySelector(".empty-column");
@@ -81,19 +69,13 @@ function moveTaskElement(taskId, status) {
   }
   targetList.appendChild(element);
   element.dataset.status = status;
-=======
-  targetList.appendChild(element);
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
   const select = document.querySelector(`select[data-task-id="${taskId}"]`);
   if (select) {
     select.value = status;
     select.dataset.currentStatus = status;
   }
-<<<<<<< HEAD
   updateColumnCount(sourceColumn);
   updateColumnCount(targetColumn);
-=======
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 }
 
 function setupEditableField(selector, fieldName) {
@@ -104,7 +86,6 @@ function setupEditableField(selector, fieldName) {
       if (nextValue === element.dataset.lastValue) {
         return;
       }
-<<<<<<< HEAD
       patchTask(element.dataset.taskId, { [fieldName]: nextValue })
         .then(() => {
           element.dataset.lastValue = nextValue;
@@ -120,12 +101,6 @@ function setupEditableField(selector, fieldName) {
         .catch(() => {
           element.textContent = element.dataset.lastValue;
         });
-=======
-      patchTask(element.dataset.taskId, { [fieldName]: nextValue }).catch(() => {
-        element.textContent = element.dataset.lastValue;
-      });
-      element.dataset.lastValue = nextValue;
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
     });
     element.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
@@ -139,7 +114,6 @@ function setupEditableField(selector, fieldName) {
 document.addEventListener("DOMContentLoaded", () => {
   setupEditableField(".task-title", "title");
 
-<<<<<<< HEAD
   document.querySelectorAll(".status-form").forEach((form) => {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -150,31 +124,21 @@ document.addEventListener("DOMContentLoaded", () => {
     select.addEventListener("change", () => {
       const desired = select.value;
       const previous = select.dataset.currentStatus || desired;
-=======
-  document.querySelectorAll(".status-select").forEach((select) => {
-    select.addEventListener("change", () => {
-      const desired = select.value;
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
       patchTask(select.dataset.taskId, { status: desired })
         .then(() => {
           moveTaskElement(select.dataset.taskId, desired);
         })
         .catch(() => {
-<<<<<<< HEAD
           const form = select.closest(".status-form");
           if (form) {
             form.submit();
             return;
           }
           select.value = previous;
-=======
-          select.value = select.dataset.currentStatus || desired;
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
         });
     });
   });
 
-<<<<<<< HEAD
   const board = document.querySelector(".kanban-board");
   let dragState = null;
   let pendingDrag = null;
@@ -311,42 +275,4 @@ document.addEventListener("DOMContentLoaded", () => {
       restoreDraggedCard(state);
     });
   }
-=======
-  const makeDraggable = (card) => {
-    card.addEventListener("dragstart", (event) => {
-      const taskId = card.dataset.taskId;
-      event.dataTransfer.setData("text/plain", taskId);
-      event.dataTransfer.effectAllowed = "move";
-      card.classList.add("dragging");
-    });
-    card.addEventListener("dragend", () => {
-      card.classList.remove("dragging");
-    });
-  };
-
-  document.querySelectorAll(".tasks-column li[draggable='true']").forEach(makeDraggable);
-
-  document.querySelectorAll(".tasks-column").forEach((column) => {
-    column.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      column.classList.add("drag-over");
-      event.dataTransfer.dropEffect = "move";
-    });
-    column.addEventListener("dragleave", () => {
-      column.classList.remove("drag-over");
-    });
-    column.addEventListener("drop", (event) => {
-      event.preventDefault();
-      column.classList.remove("drag-over");
-      const taskId = event.dataTransfer.getData("text/plain");
-      if (!taskId) {
-        return;
-      }
-      const status = column.dataset.status;
-      patchTask(taskId, { status }).then(() => {
-        moveTaskElement(taskId, status);
-      });
-    });
-  });
->>>>>>> b87e5fea71cf0c2459026bbed66920225ab85046
 });
