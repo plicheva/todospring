@@ -1,6 +1,7 @@
 import logging
 import os
 import secrets
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from hmac import compare_digest
 from sqlite3 import IntegrityError
 from functools import wraps
@@ -19,6 +20,7 @@ from flask import (
     request,
     session,
     url_for,
+    Response,
 )
 
 from log_dashboard import build_daily_status, build_log_dashboard
@@ -97,6 +99,16 @@ def get_remote_addr() -> str:
 
 
 app = Flask(__name__)
+REQUEST_COUNT = Counter(
+    "taskboard_http_requests_total",
+    "Total number of HTTP requests",
+     ["method", "endpoint", "status"]
+)
+REQUEST_DURATION = Histogram(
+    "taskboard_http_request_duration_seconds",
+    "HTTP request duration in seconds"
+)
+
 local_log_file = configure_local_logging(app)
 secret_key, generated_secret = _get_secret_key()
 app.config.update(
@@ -155,8 +167,15 @@ def protect_state_changes():
 
 @app.after_request
 def log_request(response):
+    REQUEST_COUNT.labels(
+     method=request.method,
+     endpoint=request.endpoint or "unknown",
+     status=str(response.status_code)
+     ).inc()
     started_at = getattr(g, "request_started_at", None)
     elapsed_ms = (perf_counter() - started_at) * 1000 if started_at else 0
+    if started_at:
+       REQUEST_DURATION.observe(elapsed_ms / 1000)
     user_agent = _clean_log_value(request.headers.get("User-Agent", "-"), 120)
     app.logger.info(
         "%s %s -> %s in %.1f ms from %s user_id=%s request_id=%s endpoint=%s user_agent=%s",
@@ -401,6 +420,13 @@ def logout():
     session.clear()
     app.logger.info("User logged out: user_id=%s", user_id)
     return redirect(url_for("login"))
+
+@app.route("/metrics")
+def metrics():
+    return Response(
+        generate_latest(),
+        mimetype=CONTENT_TYPE_LATEST
+    )
 
 
 if __name__ == "__main__":
